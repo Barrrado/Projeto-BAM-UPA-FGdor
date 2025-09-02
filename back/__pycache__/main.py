@@ -1,18 +1,28 @@
-from ensurepip import version
 
+import os
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-import os
-
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
 app = FastAPI()
+# Configuração do CORS Middleware para permitir requisições do seu front-end
+app.add_middleware(
+    CORSMiddleware,
+    # Defina a origem do seu front-end React.
+    # Para desenvolvimento, use ["*"] para aceitar de qualquer lugar.
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# ==============================
-# MODELO DE DADOS
-# ==============================
 class Boletim(BaseModel):
     paciente_nome: str
     paciente_idade: int
@@ -40,10 +50,6 @@ class Boletim(BaseModel):
     medico_responsavel: str
     enfermeiro_responsavel: Optional[str] = ""
 
-
-# ==============================
-# GERAÇÃO DO PDF
-# ==============================
 def gerar_pdf(boletim: Boletim, filename="boletim.pdf"):
     c = canvas.Canvas(filename, pagesize=A4)
     largura, altura = A4
@@ -91,10 +97,6 @@ def gerar_pdf(boletim: Boletim, filename="boletim.pdf"):
     c.save()
     return filename
 
-
-# ==============================
-# ENDPOINTS
-# ==============================
 @app.post("/gerar_boletim")
 def criar_boletim(boletim: Boletim):
     filename = "boletim.pdf"
